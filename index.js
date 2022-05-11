@@ -12,21 +12,21 @@ app.use(cors());
 
 // mongoose.connect("mongodb://localhost:3000/marvel-dev"); // will need for bonus
 
-const CHARACTER = mongoose.model("Characters", {
-  docName: String,
-  num: Number,
-  // si ref author: {type: mongoose.Schema.Types.ObjectId, ref: "NOMCOLLECTION"}
-});
+// const CHARACTER = mongoose.model("Characters", {
+//   docName: String,
+//   num: Number,
+//   // si ref author: {type: mongoose.Schema.Types.ObjectId, ref: "NOMCOLLECTION"}
+// });
 
+//GET all characters
 app.get("/characters", async (req, res) => {
   try {
     const { limit, skip, name } = req.query;
+    const reqQueries = `&limit=${limit}&skip=${skip}&name=${name}`;
 
     const response = await axios.get(
-      `https://lereacteur-marvel-api.herokuapp.com/comics?apiKey=${process.env.MARVEL_API_KEY}`
+      `https://lereacteur-marvel-api.herokuapp.com/characters?apiKey=${process.env.MARVEL_API_KEY}${reqQueries}`
     );
-
-    console.log(response.data);
     //#region returns
     //   {
     //     "count": 1493,
@@ -56,6 +56,98 @@ app.get("/characters", async (req, res) => {
     //             "description": "",
     //             "__v": 0
     //         },
+    //#endregion
+    return res.json(response.data);
+  } catch (error) {
+    return res.json({ error: error.message });
+  }
+});
+
+//GET 1 character
+app.get("/character/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const response = await axios.get(
+      `https://lereacteur-marvel-api.herokuapp.com/character/${id}?apiKey=${process.env.MARVEL_API_KEY}`
+    );
+    //#region returns
+    // {
+    //   thumbnail: {
+    //     path: 'http://i.annihil.us/u/prod/marvel/i/mg/3/20/5232158de5b16',
+    //     extension: 'jpg'
+    //   },
+    //   comics: [
+    //     '5fce17e278edeb0017c93def',
+    //     '5fce17ca78edeb0017c93da2',
+    //     '5fce17c878edeb0017c93d62'
+    //   ],
+    //   _id: '5fcf91f4d8a2480017b91454',
+    //   name: 'A-Bomb (HAS)',
+    //   description: "Rick Jones has been Hulk's best bud since day one, but now he's more than a friend...he's a teammate! Transformed by a Gamma energy explosion, A-Bomb's thick, armored skin is just as strong and powerful as it is blue. And when he curls into action, he uses it like a giant bowling ball of destruction! ",
+    //   __v: 0
+    // }
+    //#endregion
+    return res.json(response.data);
+  } catch (error) {
+    return res.json(error);
+  }
+});
+
+//GET all comics
+app.get("/comics", async (req, res) => {
+  try {
+    const { limit, skip, title } = req.query;
+    if (limit > 100) limit = 100;
+
+    const reqQueries = `&limit=${limit}&skip=${skip}&title=${title}`;
+
+    const response = await axios.get(
+      `https://lereacteur-marvel-api.herokuapp.com/comics?apiKey=${process.env.MARVEL_API_KEY}${reqQueries}`
+    );
+    //#region returns
+    //results : [
+    // {
+    //   thumbnail: [Object],
+    //   _id: '5fce1ecc78edeb0017c9573a',
+    //   title: '2009 Mini-Poster 6 (2009) #1',
+    //   description: null,
+    //   __v: 0
+    // }, {}]
+    //#endregion
+
+    console.log(response.data);
+
+    return res.json(response.data);
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+});
+
+//GET comics associated with char id
+app.get("/comics/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const response = await axios.get(
+      `https://lereacteur-marvel-api.herokuapp.com/comics/${id}?apiKey=${process.env.MARVEL_API_KEY}`
+    );
+    //#region returns
+    // {
+    //   thumbnail: {
+    //     path: 'http://i.annihil.us/u/prod/marvel/i/mg/3/20/5232158de5b16',
+    //     extension: 'jpg'
+    //   },
+    //   comics: [
+    //     '5fce17e278edeb0017c93def',
+    //     '5fce17ca78edeb0017c93da2',
+    //     '5fce17c878edeb0017c93d62'
+    //   ],
+    //   _id: '5fcf91f4d8a2480017b91454',
+    //   name: 'A-Bomb (HAS)',
+    //   description: "Rick Jones has been Hulk's best bud since day one, but now he's more than a friend...he's a teammate! Transformed by a Gamma energy explosion, A-Bomb's thick, armored skin is just as strong and powerful as it is blue. And when he curls into action, he uses it like a giant bowling ball of destruction! ",
+    //   __v: 0
+    // }
     //#endregion
     return res.json(response.data);
   } catch (error) {
