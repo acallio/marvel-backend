@@ -10,14 +10,11 @@ const app = express();
 app.use(formidableMiddleware());
 app.use(cors());
 
-// mongoose.connect("mongodb://localhost:3000/marvel-dev"); // will need for bonus
+mongoose.connect("mongodb://localhost/marvel-dev"); // will need for bonus
 
-// const Character = mongoose.model("Character", {
-//   name: String,
-//   id: String,
-//   comics: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comics" }],
-//   // si ref author: {type: mongoose.Schema.Types.ObjectId, ref: "NOMCOLLECTION"}
-// });
+const Favorite = mongoose.model("Favorite", {
+  newID: String,
+});
 
 //GET all characters
 app.get("/characters", async (req, res) => {
@@ -149,6 +146,37 @@ app.get("/comics/:id", async (req, res) => {
     // }
     //#endregion
     return res.json(response.data);
+  } catch (error) {
+    return res.json({ error: error.message });
+  }
+});
+
+//Get favorites
+app.get("/favorites", async (req, res) => {
+  try {
+    const response = await Favorite.find();
+
+    return res.json(response);
+  } catch (error) {
+    return res.json({ error: error.message });
+  }
+});
+
+//post Favorite
+app.post("/favorites/modify", async (req, res) => {
+  try {
+    //type is either characters or comics.
+    const { savedId } = req.fields;
+
+    const response = await Favorite.findOne({ newID: savedId });
+    if (response === null) {
+      const newFav = await new Favorite({ newID: savedId });
+      await newFav.save();
+      return res.json("added");
+    } else {
+      await Favorite.deleteOne({ newID: savedId });
+      return res.json("removed");
+    }
   } catch (error) {
     return res.json({ error: error.message });
   }
