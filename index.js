@@ -12,9 +12,10 @@ app.use(cors());
 
 // mongoose.connect("mongodb://localhost:3000/marvel-dev"); // will need for bonus
 
-// const CHARACTER = mongoose.model("Characters", {
-//   docName: String,
-//   num: Number,
+// const Character = mongoose.model("Character", {
+//   name: String,
+//   id: String,
+//   comics: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comics" }],
 //   // si ref author: {type: mongoose.Schema.Types.ObjectId, ref: "NOMCOLLECTION"}
 // });
 
@@ -115,8 +116,6 @@ app.get("/comics", async (req, res) => {
     //   __v: 0
     // }, {}]
     //#endregion
-
-    console.log(response.data);
 
     return res.json(response.data);
   } catch (error) {
