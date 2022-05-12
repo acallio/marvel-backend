@@ -14,6 +14,11 @@ mongoose.connect("mongodb://localhost/marvel-dev"); // will need for bonus
 
 const Favorite = mongoose.model("Favorite", {
   newID: String,
+  newName: String,
+  type: String,
+  image: { path: String, extension: String },
+  description: String,
+  comics: [],
 });
 
 //GET all characters
@@ -103,6 +108,7 @@ app.get("/comics", async (req, res) => {
     const response = await axios.get(
       `https://lereacteur-marvel-api.herokuapp.com/comics?apiKey=${process.env.MARVEL_API_KEY}${reqQueries}`
     );
+
     //#region returns
     //results : [
     // {
@@ -166,11 +172,18 @@ app.get("/favorites", async (req, res) => {
 app.post("/favorites/modify", async (req, res) => {
   try {
     //type is either characters or comics.
-    const { savedId } = req.fields;
+    const { savedId, newName, type, image, description, comics } = req.fields;
 
     const response = await Favorite.findOne({ newID: savedId });
     if (response === null) {
-      const newFav = await new Favorite({ newID: savedId });
+      const newFav = await new Favorite({
+        newID: savedId,
+        newName: newName,
+        type: type,
+        image: image,
+        description: description,
+        comics: comics,
+      });
       await newFav.save();
       return res.json("added");
     } else {
