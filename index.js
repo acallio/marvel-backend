@@ -3,6 +3,9 @@ const express = require("express");
 const formidableMiddleware = require("express-formidable"); // will need for bonus in bdd
 const mongoose = require("mongoose"); // will need for bonus
 const cors = require("cors");
+const SHA256 = require("crypto-js/sha256");
+const encBase64 = require("crypto-js/enc-base64");
+const uid2 = require("uid2");
 
 const axios = require("axios");
 
@@ -19,7 +22,37 @@ const Favorite = mongoose.model("Favorite", {
   image: { path: String, extension: String },
   description: String,
   comics: [],
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
 });
+
+const User = mongoose.model("User", {
+  userName: String,
+  email: String,
+  hash: String,
+  salt: String,
+  token: String,
+});
+
+const isAuthenticated = async (req, res, next) => {
+  try {
+    const checkUser = await User.findOne({
+      token: req.headers.authorization.replace("Bearer ", ""),
+    });
+    if (checkUser) {
+      req.user = checkUser;
+      return next();
+    } else return res.status(400).json("Unauthorized");
+
+    // req.user =
+  } catch (error) {
+    res.json(error);
+  }
+};
+
+module.exports = isAuthenticated;
 
 //GET all characters
 app.get("/characters", async (req, res) => {
@@ -158,9 +191,9 @@ app.get("/comics/:id", async (req, res) => {
 });
 
 //Get favorites
-app.get("/favorites", async (req, res) => {
+app.get("/favorites", isAuthenticated, async (req, res) => {
   try {
-    const response = await Favorite.find();
+    const response = await Favorite.find({ user: req.user_id });
 
     return res.json(response);
   } catch (error) {
@@ -169,7 +202,7 @@ app.get("/favorites", async (req, res) => {
 });
 
 //post Favorite
-app.post("/favorites/modify", async (req, res) => {
+app.post("/favorites/modify", isAuthenticated, async (req, res) => {
   try {
     //type is either characters or comics.
     const { savedId, newName, type, image, description, comics } = req.fields;
@@ -184,11 +217,69 @@ app.post("/favorites/modify", async (req, res) => {
         description: description,
         comics: comics,
       });
+
+      newFav.user = req.fields._id;
+      await newFav.populate("user");
+
       await newFav.save();
       return res.json("added");
     } else {
       await Favorite.deleteOne({ newID: savedId });
       return res.json("removed");
+    }
+  } catch (error) {
+    return res.json({ error: error.message });
+  }
+});
+
+app.post("/signup", async (req, res) => {
+  try {
+    const { userName, email, password } = req.fields;
+
+    const checkNewUser = await User.findOne({ email: email });
+    if (checkNewUser) return res.status(409).json("user already exists");
+
+    const salt = uid2(16);
+
+    const token = uid2(16);
+    const hash = SHA256(password + salt).toString(encBase64);
+
+    const newUser = await new User({
+      userName: userName,
+      email: email,
+      hash: hash,
+      salt: salt,
+      token: token,
+    });
+
+    await newUser.save();
+
+    return res.json({
+      token: token,
+    });
+  } catch (error) {
+    return res.json({ error: error.message });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.fields;
+
+    const findUser = await User.findOne({ email: email });
+    if (!findUser) return res.status(404).json("user does not exist");
+
+    const checkPwd =
+      SHA256(password + findUser.salt).toString(encBase64) === findUser.hash
+        ? true
+        : false;
+
+    if (checkPwd) {
+      const token = uid2(16);
+      findUser.token = token;
+
+      await findUser.save();
+      return res.json({ token: token });
     }
   } catch (error) {
     return res.json({ error: error.message });
