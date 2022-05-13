@@ -22,7 +22,7 @@ const Favorite = mongoose.model("Favorite", {
   image: { path: String, extension: String },
   description: String,
   comics: [],
-  user: {
+  owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   },
@@ -193,7 +193,7 @@ app.get("/comics/:id", async (req, res) => {
 //Get favorites
 app.get("/favorites", isAuthenticated, async (req, res) => {
   try {
-    const response = await Favorite.find({ user: req.user_id });
+    const response = await Favorite.find({ owner: req.user._id });
 
     return res.json(response);
   } catch (error) {
@@ -218,8 +218,8 @@ app.post("/favorites/modify", isAuthenticated, async (req, res) => {
         comics: comics,
       });
 
-      newFav.user = req.fields._id;
-      await newFav.populate("user");
+      newFav.owner = req.user._id;
+      await newFav.populate("owner");
 
       await newFav.save();
       return res.json("added");
