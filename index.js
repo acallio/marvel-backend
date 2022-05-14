@@ -13,7 +13,8 @@ const app = express();
 app.use(formidableMiddleware());
 app.use(cors());
 
-mongoose.connect("mongodb://localhost/marvel-dev"); // will need for bonus
+// mongoose.connect("mongodb://localhost/marvel-dev");
+mongoose.connect(process.env.MONGODB_URI);
 
 const Favorite = mongoose.model("Favorite", {
   newID: String,
